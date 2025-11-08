@@ -5,7 +5,7 @@
  "scripts": {
   "start": "node dist/app.js",
   "test": "echo \"No tests yet\"",
-  "build": "mkdir dist 2>nul || exit 0 && copy app.js dist\\app.js && copy routes.js dist\\routes.js"
+  "build": "mkdir -p dist && npx cpy app.js routes.js dist/"
 },
   "dependencies": {
     "express": "^4.18.2"

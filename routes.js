@@ -59,7 +59,7 @@ router.get('/unsafe', (req, res) => {
   res.json(merged);
 });
 
-router.post('/calc2', (req, res) => {
+router.post('/calc2', express.json(), (req, res) => {
   const expression = req.body.expr;
   // ⚠️ Insecure — allows arbitrary code execution
   const result = eval(expression);
@@ -77,7 +77,8 @@ router.get('/read2', (req, res) => {
 const apiKey = "sk_live_1234567890SECRET";
 console.log("Using API key:", apiKey);
 
-app.get('/secret2', (req, res) => {
+// FIXED: use router here (was app.get(...) which caused 'app is not defined')
+router.get('/secret2', (req, res) => {
   res.send("Confidential info: admin password is 12345");
 });
 

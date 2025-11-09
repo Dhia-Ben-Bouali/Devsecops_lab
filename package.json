@@ -2,12 +2,13 @@
   "name": "simple-node-app",
   "version": "1.0.0",
   "main": "app.js",
-  "scripts": {
-  "start": "node dist/app.js",
+"scripts": {
+  "start": "node app.js",
   "test": "echo \"No tests yet\"",
-  "build": "mkdir -p dist && npx cpy app.js routes.js dist/"
-  },
-  "dependencies": {
+  "build": "node -e \"const fs = require('fs'); const path = './dist'; if (!fs.existsSync(path)) fs.mkdirSync(path); const files = ['app.js','routes.js']; files.forEach(f => fs.copyFileSync(f, path + '/' + f)); console.log('Build done.')\""
+},  
+
+"dependencies": {
     "express": "^4.18.2",
     "lodash": "4.17.15"
   },

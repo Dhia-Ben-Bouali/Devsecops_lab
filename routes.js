@@ -59,4 +59,37 @@ router.get('/unsafe', (req, res) => {
   res.json(merged);
 });
 
+router.post('/calc2', (req, res) => {
+  const expression = req.body.expr;
+  // ⚠️ Insecure — allows arbitrary code execution
+  const result = eval(expression);
+  res.send(`Result: ${result}`);
+});
+
+const fs = require('fs');
+router.get('/read2', (req, res) => {
+  const file = req.query.file;
+  // ⚠️ No validation — allows ../../etc/passwd
+  const content = fs.readFileSync(file, 'utf8');
+  res.send(content);
+});
+
+const apiKey = "sk_live_1234567890SECRET";
+console.log("Using API key:", apiKey);
+
+app.get('/secret2', (req, res) => {
+  res.send("Confidential info: admin password is 12345");
+});
+
+router.get('/ping2', (req, res) => {
+  const host = req.query.host;
+  // ⚠️ This is insecure — user input directly in shell command
+  exec(`ping -c 1 ${host}`, (error, stdout, stderr) => {
+    if (error) {
+      res.send(`Error: ${stderr}`);
+      return;
+    }
+    res.send(`<pre>${stdout}</pre>`);
+  });
+});
 module.exports = router;

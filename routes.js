@@ -66,7 +66,7 @@ router.post('/calc2', (req, res) => {
   res.send(`Result: ${result}`);
 });
 
-const fs = require('fs');
+
 router.get('/read2', (req, res) => {
   const file = req.query.file;
   // ⚠️ No validation — allows ../../etc/passwd

@@ -2,12 +2,16 @@
   "name": "simple-node-app",
   "version": "1.0.0",
   "main": "app.js",
- "scripts": {
+  "scripts": {
   "start": "node dist/app.js",
   "test": "echo \"No tests yet\"",
   "build": "mkdir -p dist && npx cpy app.js routes.js dist/"
-},
+  },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "lodash": "4.17.15"
+  },
+  "devDependencies": {
+    "cpy-cli": "^4.1.0"
   }
 }

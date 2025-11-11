@@ -66,7 +66,6 @@ router.post('/calc2', express.json(), (req, res) => {
   res.send(`Result: ${result}`);
 });
 
-
 router.get('/read2', (req, res) => {
   const file = req.query.file;
   // ⚠️ No validation — allows ../../etc/passwd
@@ -93,4 +92,124 @@ router.get('/ping2', (req, res) => {
     res.send(`<pre>${stdout}</pre>`);
   });
 });
+
+// ----------------- Vulnerable login interface & route -----------------
+// GET /login - serves a simple HTML login form. Intentionally insecure.
+router.get('/login', (req, res) => {
+  // Note: form submits credentials in plain body or query depending on method used.
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Vulnerable Login (for scanners)</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; background:#f7f7f7 }
+          .card { max-width:400px; margin:0 auto; padding:20px; background:#fff; border:1px solid #ddd; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05) }
+          input { width:100%; padding:8px; margin:8px 0; box-sizing:border-box }
+          button { padding:10px 15px }
+          .note { font-size:12px; color:#666 }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h2>Login</h2>
+          <form id="loginForm" method="post" action="/login">
+            <label>Username</label>
+            <input name="username" id="username" value="admin" />
+            <label>Password</label>
+            <input name="password" id="password" value="Admin@123" />
+            <div style="margin-top:12px">
+              <button type="submit">Login</button>
+            </div>
+          </form>
+
+          <p class="note">
+            This page is intentionally insecure. Credentials are hardcoded and form posts plain data.
+          </p>
+
+          <p class="note">
+            You can also send JSON POST to /login with { "username": "...", "password": "..." }.
+          </p>
+        </div>
+
+        <script>
+          // deliberately insecure: submit form via fetch and show response inline
+          document.getElementById('loginForm').addEventListener('submit', function(e){
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+
+            // intentionally send JSON and then display raw response
+            fetch('/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: u, password: p })
+            })
+            .then(r => r.text())
+            .then(t => {
+              const pre = document.createElement('pre');
+              pre.textContent = t;
+              document.body.appendChild(pre);
+            })
+            .catch(err => alert('Request failed'));
+          });
+        </script>
+      </body>
+    </html>
+  `;
+  res.type('html').send(html);
+});
+
+// POST /login - intentionally vulnerable with hardcoded credentials and weak token
+router.post('/login', express.json(), (req, res) => {
+  // hardcoded credentials (Security Hotspot)
+  const HARD_USER = 'admin';
+  const HARD_PASS = 'Admin@123';
+
+  // Accept credentials from JSON body or URL-encoded form (vulnerable and permissive)
+  const body = req.body || {};
+  // Support basic form URL-encoded fallback
+  const username = body.username || req.query.username || req.body.user || req.body.username_field;
+  const password = body.password || req.query.password || req.body.pass || req.body.password_field;
+
+  if (!username || !password) {
+    return res.status(400).send('username and password required');
+  }
+
+  // direct comparison with hardcoded creds (insecure by design)
+  if (username === HARD_USER && password === HARD_PASS) {
+    // create an intentionally weak "token" and return it
+    const token = `${username}:${password}:${Date.now()}`; // predictable, contains password
+    // return token in body (no secure cookie, no encryption, no expiry handling)
+    return res.json({ loggedIn: true, token, user: username });
+  }
+
+  return res.status(401).send('Invalid credentials');
+});
+
+// Optional insecure variant: GET login via query string (common scanner target)
+router.get('/login-via-query', (req, res) => {
+  // This endpoint logs in if ?username=...&password=... provided. Intentionally insecure.
+  const HARD_USER = 'admin';
+  const HARD_PASS = 'Admin@123';
+  const username = req.query.username;
+  const password = req.query.password;
+
+  if (!username || !password) {
+    return res.status(400).send('provide username and password in query string');
+  }
+
+  if (username === HARD_USER && password === HARD_PASS) {
+    // set a plain cookie with token (no HttpOnly, no Secure)
+    const token = `${username}:${password}:${Date.now()}`;
+    res.setHeader('Set-Cookie', `vulntoken=${token}; Path=/;`); // insecure cookie
+    return res.send('Logged in via query. Token set as cookie.');
+  }
+
+  return res.status(401).send('Invalid credentials');
+});
+
+// --------------------------------------------------------------------
+
 module.exports = router;

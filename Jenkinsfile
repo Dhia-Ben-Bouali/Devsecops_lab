@@ -32,6 +32,27 @@ pipeline {
             }
         }
 
+        stage('Conditional Build') {
+            steps {
+                script {
+                    // Get the commit message of the last commit
+                    def commitMessage = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
+                    
+                    echo "Last commit message: ${commitMessage}"
+
+                    // Only continue if message contains "devsecops_lab"
+                    if (commitMessage.contains("devsecops_lab")) {
+                        echo "Triggering pipeline because commit matches..."
+                        // Place your build steps here
+                    } else {
+                        echo "Skipping pipeline: commit message does not match."
+                        currentBuild.result = 'SUCCESS'
+                        return
+                    }
+                }
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'

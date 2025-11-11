@@ -93,70 +93,196 @@ router.get('/ping2', (req, res) => {
   });
 });
 
-// ----------------- Vulnerable login interface & route -----------------
-// GET /login - serves a simple HTML login form. Intentionally insecure.
+// ----------------- Improved UI but still intentionally vulnerable -----------------
+
+// GET /login - serves a polished but insecure HTML login page.
 router.get('/login', (req, res) => {
-  // Note: form submits credentials in plain body or query depending on method used.
   const html = `
-    <!doctype html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Vulnerable Login (for scanners)</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 40px; background:#f7f7f7 }
-          .card { max-width:400px; margin:0 auto; padding:20px; background:#fff; border:1px solid #ddd; border-radius:6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05) }
-          input { width:100%; padding:8px; margin:8px 0; box-sizing:border-box }
-          button { padding:10px 15px }
-          .note { font-size:12px; color:#666 }
-        </style>
-      </head>
-      <body>
-        <div class="card">
-          <h2>Login</h2>
-          <form id="loginForm" method="post" action="/login">
-            <label>Username</label>
-            <input name="username" id="username" value="admin" />
-            <label>Password</label>
-            <input name="password" id="password" value="Admin@123" />
-            <div style="margin-top:12px">
-              <button type="submit">Login</button>
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>Acme Portal — Sign In</title>
+      <style>
+        :root{
+          --bg:#f1f5f9;
+          --card:#ffffff;
+          --accent:#0b74de;
+          --muted:#6b7280;
+          --radius:12px;
+          --glass: rgba(255,255,255,0.6);
+          --shadow: 0 8px 30px rgba(2,6,23,0.12);
+        }
+        html,body{height:100%; margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: radial-gradient(circle at 10% 20%, #e6f0ff 0%, transparent 20%), linear-gradient(180deg, var(--bg), #eef2f7); color:#0f172a}
+        .site {min-height:100vh; display:flex; flex-direction:column}
+        header{height:72px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:transparent}
+        .brand {display:flex; align-items:center; gap:12px; font-weight:600}
+        .brand .logo {width:40px; height:40px; border-radius:8px; background:linear-gradient(135deg,var(--accent),#2fb4ff); display:flex; align-items:center; justify-content:center; color:white; font-size:18px}
+        .container {flex:1; display:flex; align-items:center; justify-content:center; padding:36px}
+        .card {
+          width:100%;
+          max-width:920px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.9), var(--card));
+          border-radius:var(--radius);
+          box-shadow:var(--shadow);
+          display:grid;
+          grid-template-columns: 1fr 420px;
+          overflow:hidden;
+        }
+        .left {
+          padding:40px;
+          display:flex;
+          flex-direction:column;
+          gap:16px;
+          background:
+            linear-gradient(180deg, rgba(11,116,222,0.06), rgba(43,87,195,0.02));
+        }
+        .hero-title {font-size:22px; margin:0; color:#071233}
+        .hero-sub {color:var(--muted); font-size:14px; line-height:1.5}
+        .features {display:flex; gap:12px; margin-top:8px; flex-wrap:wrap}
+        .feature {background:var(--glass); padding:10px 12px; border-radius:10px; font-size:13px; color:#0b2740; box-shadow: 0 2px 8px rgba(11,116,222,0.06)}
+        .right {background:transparent; padding:36px; display:flex; align-items:center; justify-content:center}
+        form {width:100%}
+        .form-card {width:100%; max-width:360px}
+        label {font-size:13px; color:var(--muted)}
+        input[type="text"], input[type="password"]{
+          width:100%; padding:12px 14px; margin-top:6px; margin-bottom:12px;
+          border:1px solid #e6e9ee; border-radius:8px; box-sizing:border-box;
+          font-size:15px;
+        }
+        .actions {display:flex; align-items:center; justify-content:space-between; gap:12px}
+        .btn {background:var(--accent); color:white; padding:10px 14px; border-radius:10px; border:0; cursor:pointer; font-weight:600}
+        .secondary {background:transparent; border:1px solid #e6e9ee; color:#0f172a; padding:9px 12px; border-radius:10px}
+        .note {font-size:12px; color:var(--muted); margin-top:8px}
+        footer{height:64px; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--muted)}
+        pre.response {white-space:pre-wrap; background:#0b1723; color:#e6f6ff; padding:12px; border-radius:8px; margin-top:12px; overflow:auto}
+        @media (max-width:860px){
+          .card{grid-template-columns:1fr; padding:0}
+          .left{padding:20px}
+          .right{padding:20px}
+        }
+      </style>
+    </head>
+    <body>
+      <div class="site">
+        <header>
+          <div class="brand">
+            <div class="logo">AC</div>
+            <div>
+              <div style="font-size:15px">Acme Corporation</div>
+              <div style="font-size:12px; color:var(--muted)">Internal portal (for scanners)</div>
             </div>
-          </form>
+          </div>
+          <nav style="display:flex; gap:12px; align-items:center">
+            <a href="/" style="text-decoration:none; color:var(--muted); font-size:14px">Home</a>
+            <a href="/docs" style="text-decoration:none; color:var(--muted); font-size:14px">Docs</a>
+            <a href="/login" style="text-decoration:none; color:var(--accent); font-weight:600">Sign in</a>
+          </nav>
+        </header>
 
-          <p class="note">
-            This page is intentionally insecure. Credentials are hardcoded and form posts plain data.
-          </p>
+        <main class="container">
+          <div class="card" role="region" aria-label="login card">
+            <div class="left">
+              <h1 class="hero-title">Welcome back</h1>
+              <p class="hero-sub">Sign in to access the Acme portal. This environment is intentionally insecure and used for scanner testing.</p>
 
-          <p class="note">
-            You can also send JSON POST to /login with { "username": "...", "password": "..." }.
-          </p>
-        </div>
+              <div class="features" aria-hidden="true">
+                <div class="feature">Hardcoded credentials</div>
+                <div class="feature">Predictable tokens</div>
+                <div class="feature">No rate-limiting</div>
+              </div>
 
-        <script>
-          // deliberately insecure: submit form via fetch and show response inline
-          document.getElementById('loginForm').addEventListener('submit', function(e){
-            e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
+              <div style="margin-top:auto; font-size:12px; color:var(--muted)">
+                Tip: the login form is vulnerable and accepts JSON POST to <code>/login</code>.
+              </div>
+            </div>
 
-            // intentionally send JSON and then display raw response
-            fetch('/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username: u, password: p })
-            })
-            .then(r => r.text())
-            .then(t => {
-              const pre = document.createElement('pre');
-              pre.textContent = t;
-              document.body.appendChild(pre);
-            })
-            .catch(err => alert('Request failed'));
+            <div class="right">
+              <div class="form-card">
+                <form id="loginForm" method="post" action="/login">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+                    <div style="font-size:16px; font-weight:600">Sign in to your account</div>
+                    <div style="font-size:12px; color:var(--muted)">Demo</div>
+                  </div>
+
+                  <label for="username">Username</label>
+                  <input id="username" name="username" type="text" value="admin" autocomplete="username" />
+
+                  <label for="password">Password</label>
+                  <input id="password" name="password" type="password" value="Admin@123" autocomplete="current-password" />
+
+                  <div class="actions">
+                    <button type="button" id="btnLogin" class="btn">Sign in</button>
+                    <button type="button" id="btnDemo" class="secondary">Use demo creds</button>
+                  </div>
+
+                  <div class="note">This page is intentionally insecure. Do not use real credentials here.</div>
+
+                  <div id="responseWrap"></div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <footer>
+          &copy; ${new Date().getFullYear()} Acme Corporation — For scanner testing only.
+        </footer>
+      </div>
+
+      <script>
+        // intentionally permissive client behavior to surface vulnerabilities to scanners
+        (function(){
+          const btn = document.getElementById('btnLogin');
+          const btnDemo = document.getElementById('btnDemo');
+          const respWrap = document.getElementById('responseWrap');
+
+          btnDemo.addEventListener('click', () => {
+            document.getElementById('username').value = 'admin';
+            document.getElementById('password').value = 'Admin@123';
           });
-        </script>
-      </body>
-    </html>
+
+          btn.addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // deliberately send JSON POST and display full server response
+            try {
+              const res = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+              });
+              const text = await res.text();
+              const pre = document.createElement('pre');
+              pre.className = 'response';
+              pre.textContent = '[' + res.status + '] ' + text;
+              respWrap.innerHTML = '';
+              respWrap.appendChild(pre);
+            } catch (e) {
+              const err = document.createElement('pre');
+              err.className = 'response';
+              err.textContent = 'Request failed: ' + e.message;
+              respWrap.innerHTML = '';
+              respWrap.appendChild(err);
+            }
+          });
+
+          // convenience: also allow query-string login via URL for scanners
+          if (location.search.includes('autologin=1')) {
+            const params = new URLSearchParams(location.search);
+            const u = params.get('username') || 'admin';
+            const p = params.get('password') || 'Admin@123';
+            document.getElementById('username').value = u;
+            document.getElementById('password').value = p;
+            // auto-trigger
+            document.getElementById('btnLogin').click();
+          }
+        })();
+      </script>
+    </body>
+  </html>
   `;
   res.type('html').send(html);
 });

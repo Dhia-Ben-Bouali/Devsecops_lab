@@ -32,44 +32,38 @@ pipeline {
             }
         }
 
-        stage('Conditional Build') {
+        stage('Validate Commit Message') {
             steps {
                 script {
-                    // Get the commit message of the last commit
+                    // Get last commit message
                     def commitMessage = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
-                    
                     echo "Last commit message: ${commitMessage}"
 
-                    // Only continue if message contains "devsecops_lab"
-                    if (commitMessage.contains("devsecops_lab")) {
-                        echo "Triggering pipeline because commit matches..."
-                        // Place your build steps here
-                    } else {
-                        echo "Skipping pipeline: commit message does not match."
+                    // Abort pipeline if message does not contain "devsecops_lab"
+                    if (!commitMessage.contains("devsecops_lab")) {
+                        echo "❌ Commit message does not match 'devsecops_lab'. Aborting pipeline."
                         currentBuild.result = 'SUCCESS'
-                        return
+                        error("Pipeline skipped due to commit message filter")
+                    } else {
+                        echo "✅ Commit message matched. Continuing pipeline..."
                     }
                 }
             }
         }
 
+        // =====================
+        // Install & Build
+        // =====================
         stage('Install Dependencies') {
-            steps {
-                sh 'npm install'
-            }
+            steps { sh 'npm install' }
         }
 
         stage('Build') {
-            steps {
-                sh 'npm run build'
-            }
+            steps { sh 'npm run build' }
         }
 
         stage('Test') {
-            steps {
-                // Continue even if tests fail
-                sh 'npm test || true'
-            }
+            steps { sh 'npm test || true' } // Continue even if tests fail
         }
 
         // =====================
@@ -98,9 +92,7 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                sh "docker build -t ${APP_IMAGE} ."
-            }
+            steps { sh "docker build -t ${APP_IMAGE} ." }
         }
 
         // =====================
@@ -110,56 +102,50 @@ pipeline {
             steps {
                 script {
                     echo '📈 Setting up Prometheus + Grafana + cAdvisor...'
-        
-                    // Prometheus
-                    def prometheusExists = sh(script: "docker ps -a --filter name=prometheus -q", returnStdout: true).trim()
-                    if (!prometheusExists) {
-                        sh """
-                            docker run -d --name prometheus \
-                                --network ${DOCKER_NETWORK} \
-                                -p ${PROMETHEUS_PORT}:9090 \
-                                -v ${WORKSPACE}/prometheus.yml:/etc/prometheus/prometheus.yml \
-                                prom/prometheus
-                        """
-                        echo '✅ Prometheus started.'
-                    } else {
-                        echo '✅ Prometheus already running.'
-                    }
-        
-                    // cAdvisor
-                    def cadvisorExists = sh(script: "docker ps -a --filter name=cadvisor -q", returnStdout: true).trim()
-                    if (!cadvisorExists) {
-                        sh """
-                            docker run -d --name cadvisor \
-                                --volume=/:/rootfs:ro \
-                                --volume=/var/run/docker.sock:/var/run/docker.sock:ro \
-                                --volume=/var/lib/docker/:/var/lib/docker:ro \
-                                --volume=/sys:/sys:ro \
-                                --network ${DOCKER_NETWORK} \
-                                -p 5050:8080 \
-                                gcr.io/cadvisor/cadvisor:latest
-                        """
-                        echo '✅ cAdvisor started.'
-                    } else {
-                        echo '✅ cAdvisor already running.'
-                    }
-        
-                    // Grafana
-                    def grafanaExists = sh(script: "docker ps -a --filter name=grafana -q", returnStdout: true).trim()
-                    if (!grafanaExists) {
-                        sh """
-                            docker run -d --name grafana \
-                                --network ${DOCKER_NETWORK} \
-                                -p ${GRAFANA_PORT}:3000 \
-                                grafana/grafana
-                        """
-                        echo '✅ Grafana started.'
-                    } else {
-                        echo '✅ Grafana already running.'
+
+                    def containers = ['prometheus': '9090', 'cadvisor': '5050', 'grafana': '3000']
+
+                    containers.each { name, port ->
+                        def exists = sh(script: "docker ps -a --filter name=${name} -q", returnStdout: true).trim()
+                        if (!exists) {
+                            def runCmd = ""
+                            if (name == 'prometheus') {
+                                runCmd = """
+                                    docker run -d --name prometheus \
+                                        --network ${DOCKER_NETWORK} \
+                                        -p ${PROMETHEUS_PORT}:9090 \
+                                        -v ${WORKSPACE}/prometheus.yml:/etc/prometheus/prometheus.yml \
+                                        prom/prometheus
+                                """
+                            } else if (name == 'cadvisor') {
+                                runCmd = """
+                                    docker run -d --name cadvisor \
+                                        --volume=/:/rootfs:ro \
+                                        --volume=/var/run/docker.sock:/var/run/docker.sock:ro \
+                                        --volume=/var/lib/docker/:/var/lib/docker:ro \
+                                        --volume=/sys:/sys:ro \
+                                        --network ${DOCKER_NETWORK} \
+                                        -p 5050:8080 \
+                                        gcr.io/cadvisor/cadvisor:latest
+                                """
+                            } else if (name == 'grafana') {
+                                runCmd = """
+                                    docker run -d --name grafana \
+                                        --network ${DOCKER_NETWORK} \
+                                        -p ${GRAFANA_PORT}:3000 \
+                                        grafana/grafana
+                                """
+                            }
+                            sh runCmd
+                            echo "✅ ${name} started."
+                        } else {
+                            echo "✅ ${name} already running."
+                        }
                     }
                 }
             }
         }
+
         // =====================
         // Run Application
         // =====================
@@ -249,9 +235,7 @@ pipeline {
         // Deployment
         // =====================
         stage('Deploy') {
-            steps {
-                echo 'Deployment step (to be customized later)'
-            }
+            steps { echo 'Deployment step (to be customized later)' }
         }
 
     } // end stages

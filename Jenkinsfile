@@ -1,3 +1,27 @@
+// =====================
+// Jenkinsfile for DevSecOps Lab Project
+// =====================
+
+// Slack notification helper function
+def sendSlackMessage(color, text) {
+    def safeText = text.replace('"', '\\"').replace('\n', '\\n')
+    writeFile file: 'payload.json', text: """
+{
+  "attachments": [
+    {
+      "color": "${color}",
+      "text": "${safeText}"
+    }
+  ]
+}
+"""
+    sh """
+      curl -s -X POST -H 'Content-type: application/json' \
+      --data @payload.json \
+      ${env.SLACK_WEBHOOK_URL}
+    """
+}
+
 pipeline {
     agent any
 
@@ -24,13 +48,17 @@ pipeline {
     stages {
 
         // =====================
-        // Code Preparation
+        // Checkout Code
         // =====================
         stage('Checkout Code') {
             steps {
                 git branch: 'main', credentialsId: 'jenkins-git', url: 'https://github.com/Dhia-Ben-Bouali/Devsecops_lab'
             }
         }
+
+        // =====================
+        // Validate Commit Message
+        // =====================
         stage('Validate Commit Message') {
             steps {
                 script {
@@ -38,46 +66,17 @@ pipeline {
                     def commitMessage = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
                     echo "Last commit message: ${commitMessage}"
 
-                    // Define your Slack webhook URL (store securely in Jenkins credentials)
-                    def webhookUrl = credentials('slack-webhook') // Jenkins secret text ID
-
-                    // Define helper function to send Slack messages
-                    def sendSlackMessage = { color, text ->
-                        def safeText = text.replace('"', '\\"').replace('\n', '\\n')
-                        writeFile file: 'payload.json', text: """
-                    {
-                    "attachments": [
-                        {
-                        "color": "${color}",
-                        "text": "${safeText}"
-                        }
-                    ]
-                    }
-                    """
-                        sh """
-                        curl -s -X POST -H 'Content-type: application/json' \
-                        --data @payload.json \
-                        ${webhookUrl}
-                        """
-                    }
+                    // Slack Webhook from Jenkins credentials
+                    env.SLACK_WEBHOOK_URL = credentials('slack-webhook')
 
                     if (!commitMessage.contains("devsecops_lab")) {
                         echo "❌ Commit message does not match 'devsecops_lab'. Aborting pipeline."
-
-                        sendSlackMessage(
-                            "#FF0000",
-                            "🚫 *Pipeline skipped!* Commit message did not contain 'devsecops_lab'.\\n*Commit:* `${commitMessage}`"
-                        )
-
+                        sendSlackMessage("#FF0000", "🚫 Pipeline skipped! Commit message did not contain 'devsecops_lab'.\\nCommit: `${commitMessage}`")
                         currentBuild.result = 'SUCCESS'
                         error("Pipeline skipped due to commit message filter")
                     } else {
                         echo "✅ Commit message matched. Continuing pipeline..."
-
-                        sendSlackMessage(
-                            "#36a64f",
-                            "✅ *Commit message validation passed!* Proceeding with the pipeline.\\n*Commit:* `${commitMessage}`"
-                        )
+                        sendSlackMessage("#36a64f", "✅ Commit message validation passed! Proceeding with the pipeline.\\nCommit: `${commitMessage}`")
                     }
                 }
             }
@@ -99,7 +98,7 @@ pipeline {
         }
 
         // =====================
-        // Static Analysis
+        // SonarQube Analysis
         // =====================
         stage('SonarQube Analysis') {
             steps {

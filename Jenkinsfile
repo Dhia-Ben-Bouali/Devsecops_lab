@@ -43,10 +43,21 @@ pipeline {
 
                     // Define helper function to send Slack messages
                     def sendSlackMessage = { color, text ->
+                        def safeText = text.replace('"', '\\"').replace('\n', '\\n')
+                        writeFile file: 'payload.json', text: """
+                    {
+                    "attachments": [
+                        {
+                        "color": "${color}",
+                        "text": "${safeText}"
+                        }
+                    ]
+                    }
+                    """
                         sh """
-                            curl -X POST -H 'Content-type: application/json' \
-                            --data '{"attachments":[{"color":"${color}","text":"${text}"}]}' \
-                            ${webhookUrl}
+                        curl -s -X POST -H 'Content-type: application/json' \
+                        --data @payload.json \
+                        ${webhookUrl}
                         """
                     }
 

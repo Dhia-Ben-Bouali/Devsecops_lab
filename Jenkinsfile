@@ -9,21 +9,21 @@ def sendSlackMessage(color, text) {
 
     // Write JSON payload to file
     writeFile file: 'payload.json', text: """
-{
-  "attachments": [
     {
-      "color": "${color}",
-      "text": "${safeText}"
+    "attachments": [
+        {
+        "color": "${color}",
+        "text": "${safeText}"
+        }
+    ]
     }
-  ]
-}
-"""
+    """
 
     // Send Slack notification using environment variable
     sh """
-      curl -s -X POST -H 'Content-type: application/json' \
-      --data @payload.json \
-      "\${SLACK_WEBHOOK_URL}"
+    curl -s -X POST -H 'Content-type: application/json' \
+    --data @payload.json \
+    "\$SLACK_WEBHOOK_URL"
     """
 }
 
@@ -48,6 +48,9 @@ pipeline {
         // Monitoring
         PROMETHEUS_PORT = "9090"
         GRAFANA_PORT = "3000"
+
+        SLACK_WEBHOOK_URL = credentials('slack-webhook')
+
     }
 
     stages {

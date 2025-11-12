@@ -233,42 +233,57 @@ pipeline {
         // =====================
         // Security Scans
         // =====================
-        stage('Nikto Web Server Scan') {
-            steps {
-                script {
-                    echo '🔍 Running Nikto scan on web server...'
-                    sh "mkdir -p ${NIKTO_REPORTS}"
-                    sh """
-                        docker run --rm -u 0:0 \
-                            --network ${DOCKER_NETWORK} \
-                            -v ${NIKTO_REPORTS}:/nikto-reports \
-                            ghcr.io/sullo/nikto:latest \
-                            -h http://${APP_CONTAINER}:${APP_PORT} \
-                            -o /nikto-reports/nikto-report.txt
-                    """
-                    archiveArtifacts artifacts: 'nikto-reports/**', allowEmptyArchive: true
-                    echo '✅ Nikto scan finished, report archived.'
-                }
-            }
+// =====================
+// Nikto Web Server Scan (Improved)
+// =====================
+stage('Nikto Web Server Scan') {
+    steps {
+        script {
+            echo '🔍 Running Nikto scan on web server...'
+            sh "mkdir -p ${NIKTO_REPORTS}"
+            sh """
+                docker run --rm -u 0:0 \
+                    --network ${DOCKER_NETWORK} \
+                    -v ${NIKTO_REPORTS}:/nikto-reports \
+                    ghcr.io/sullo/nikto:latest \
+                    -h http://${APP_CONTAINER}:${APP_PORT} \
+                    -Format html \
+                    -o /nikto-reports/nikto-report.html
+            """
+            archiveArtifacts artifacts: 'nikto-reports/**', allowEmptyArchive: true
+            echo '✅ Nikto scan finished, report archived as HTML.'
         }
+    }
+}
 
-        stage('Trivy Security Scan') {
-            steps {
-                script {
-                    echo '🔍 Running Trivy scan on Docker image (pipeline continues)...'
-                    sh "mkdir -p ${TRIVY_REPORTS}"
-                    sh """
-                        docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-                            -v ${TRIVY_REPORTS}:/trivy-reports \
-                            aquasec/trivy:latest \
-                            image --exit-code 0 --severity HIGH,CRITICAL \
-                            -f json -o /trivy-reports/trivy-report.json ${APP_IMAGE}
-                    """
-                    archiveArtifacts artifacts: 'trivy-reports/**', allowEmptyArchive: true
-                    echo '✅ Trivy scan finished, report archived.'
-                }
-            }
+// =====================
+// Trivy Security Scan (Improved)
+// =====================
+stage('Trivy Security Scan') {
+    steps {
+        script {
+            echo '🔍 Running Trivy scan on Docker image (pipeline continues)...'
+            sh "mkdir -p ${TRIVY_REPORTS}"
+            sh """
+                # JSON output for automation
+                docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v ${TRIVY_REPORTS}:/trivy-reports \
+                    aquasec/trivy:latest \
+                    image --exit-code 0 --severity HIGH,CRITICAL \
+                    -f json -o /trivy-reports/trivy-report.json ${APP_IMAGE}
+
+                # Table output for human readability
+                docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v ${TRIVY_REPORTS}:/trivy-reports \
+                    aquasec/trivy:latest \
+                    image --exit-code 0 --severity HIGH,CRITICAL \
+                    -f table -o /trivy-reports/trivy-report.txt ${APP_IMAGE}
+            """
+            archiveArtifacts artifacts: 'trivy-reports/**', allowEmptyArchive: true
+            echo '✅ Trivy scan finished, reports archived (JSON + table).'
         }
+    }
+}
 
         // =====================
         // Deployment

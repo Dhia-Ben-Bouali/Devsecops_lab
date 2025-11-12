@@ -10,10 +10,6 @@ const _ = require('lodash'); // vulnerable dependency version will be in package
 const DB_PASSWORD = 'P@ssw0rd1234';
 
 // NOTE: Keep this redirect intentional and explicit (302) so "/" always redirects to /login.
-router.get('/', (req, res) => {
-  // explicit 302 redirect (default for res.redirect is 302, but made explicit for clarity)
-  res.redirect(302, '/login');
-});
 
 // 2) Command injection via unsanitized input
 router.get('/ping', (req, res) => {

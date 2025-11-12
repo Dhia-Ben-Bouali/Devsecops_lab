@@ -9,6 +9,9 @@ const _ = require('lodash'); // vulnerable dependency version will be in package
 // 1) Hardcoded credential (Security Hotspot)
 const DB_PASSWORD = 'P@ssw0rd1234';
 
+app.get('/', (req, res) => {
+    res.redirect('/login');
+});
 // 2) Command injection via unsanitized input
 router.get('/ping', (req, res) => {
   const host = req.query.host || '127.0.0.1';

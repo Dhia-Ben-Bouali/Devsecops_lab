@@ -9,8 +9,6 @@ const _ = require('lodash'); // vulnerable dependency version will be in package
 // 1) Hardcoded credential (Security Hotspot)
 const DB_PASSWORD = 'P@ssw0rd1234';
 
-// NOTE: Keep this redirect intentional and explicit (302) so "/" always redirects to /login.
-
 // 2) Command injection via unsanitized input
 router.get('/ping', (req, res) => {
   const host = req.query.host || '127.0.0.1';
@@ -61,7 +59,6 @@ router.get('/unsafe', (req, res) => {
   res.json(merged);
 });
 
-// Additional intentionally insecure endpoints (kept)
 router.post('/calc2', express.json(), (req, res) => {
   const expression = req.body.expr;
   // ⚠️ Insecure — allows arbitrary code execution

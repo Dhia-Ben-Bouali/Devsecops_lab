@@ -279,10 +279,23 @@ pipeline {
 
     } // end stages
 
-    post {
+  post {
+        success {
+            script {
+                sendSlackMessage("#36a64f", "✅ Pipeline Succeeded!\n*Job:* ${env.JOB_NAME}\n*Build:* #${env.BUILD_NUMBER}\n<${env.BUILD_URL}|View Build>")
+            }
+        }
+
+        failure {
+            script {
+                sendSlackMessage("#FF0000", "❌ Pipeline Failed!\n*Job:* ${env.JOB_NAME}\n*Build:* #${env.BUILD_NUMBER}\n<${env.BUILD_URL}|View Build>")
+            }
+        }
+
         always {
-            echo 'Pipeline finished — containers are still running for monitoring.'
+            echo 'Pipeline finished.'
             sh 'docker ps -a'
         }
     }
 }
+

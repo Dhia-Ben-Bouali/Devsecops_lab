@@ -4,7 +4,10 @@
 
 // Slack notification helper function
 def sendSlackMessage(color, text) {
+    // Escape quotes and newlines
     def safeText = text.replace('"', '\\"').replace('\n', '\\n')
+
+    // Write JSON payload to file
     writeFile file: 'payload.json', text: """
 {
   "attachments": [
@@ -15,10 +18,12 @@ def sendSlackMessage(color, text) {
   ]
 }
 """
+
+    // Send Slack notification using environment variable
     sh """
       curl -s -X POST -H 'Content-type: application/json' \
       --data @payload.json \
-      ${env.SLACK_WEBHOOK_URL}
+      "\${SLACK_WEBHOOK_URL}"
     """
 }
 
@@ -62,12 +67,12 @@ pipeline {
         stage('Validate Commit Message') {
             steps {
                 script {
+                    // Load Slack webhook from Jenkins credentials
+                    env.SLACK_WEBHOOK_URL = credentials('slack-webhook')
+
                     // Get last commit message
                     def commitMessage = sh(script: "git log -1 --pretty=%B", returnStdout: true).trim()
                     echo "Last commit message: ${commitMessage}"
-
-                    // Slack Webhook from Jenkins credentials
-                    env.SLACK_WEBHOOK_URL = credentials('slack-webhook')
 
                     if (!commitMessage.contains("devsecops_lab")) {
                         echo "❌ Commit message does not match 'devsecops_lab'. Aborting pipeline."

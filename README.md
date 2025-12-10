@@ -1,49 +1,7 @@
-Secure CI/CD Pipeline
+<h1 align="center"><b>SECURE CI/CD PIPELINE</b></h1>
 
-This repository contains a fully automated CI/CD pipeline designed to integrate software delivery with security best practices.
-The pipeline includes code validation, automated testing, security analysis (SAST, DAST, image scanning), monitoring, and deployment, all orchestrated through Jenkins.
+This repository contains a fully automated CI/CD pipeline integrating build automation, testing, security analysis, monitoring, and deployment using Jenkins.
 
-📌 Pipeline Architecture
-<div align="center"> <img src="Git.png" alt="CI/CD Pipeline Diagram" width="900"> </div>
-🚀 Features
-1. Build & Test Automation
-
-Commit validation
-
-Dependency installation
-
-Application build
-
-Unit testing execution
-
-2. Integrated Security
-
-SAST with SonarQube
-
-DAST on the live application environment
-
-Docker image scanning using Trivy
-
-Failure gates at each critical stage
-
-3. Containerization & Deployment
-
-Docker environment preparation
-
-Secure application image build
-
-Deployment to the target environment
-
-4. Monitoring & Observability
-
-Application monitoring integrated into the pipeline
-
-5. Notifications
-
-Slack notifications for:
-
-Pipeline failures
-
-Successful deployment
-
-Important pipeline events
+<h1><b>📌 PIPELINE ARCHITECTURE</b></h1> <div align="center"> <img src="Git.png" alt="CI/CD Pipeline Diagram" width="900"> </div>
+<h1><b>🚀 FEATURES</b></h1> <h2><b>1. Build & Test Automation</b></h2> <ul> <li>Commit validation</li> <li>Dependency installation</li> <li>Application build</li> <li>Unit testing execution</li> </ul> <h2><b>2. Integrated Security</b></h2> <ul> <li><b>SAST</b> with SonarQube</li> <li><b>DAST</b> on the running application</li> <li><b>Image scanning</b> using Trivy</li> <li>Failure gates at all stages</li> </ul> <h2><b>3. Containerization & Deployment</b></h2> <ul> <li>Docker network preparation</li> <li>Secure container image build</li> <li>Deployment to the target environment</li> </ul> <h2><b>4. Monitoring & Observability</b></h2> <ul> <li>Integrated application monitoring</li> </ul> <h2><b>5. Notifications</b></h2> <ul> <li>Slack alerts for failures and successful deployments</li> </ul>
+<h1><b>🛠️ TECHNOLOGIES USED</b></h1> <table> <tr><th>Component</th><th>Tool</th></tr> <tr><td>CI/CD Orchestrator</td><td>Jenkins</td></tr> <tr><td>Version Control</td><td>Git</td></tr> <tr><td>Static Analysis</td><td>SonarQube (SAST)</td></tr> <tr><td>Dynamic Analysis</td><td>Nikto / DAST</td></tr> <tr><td>Image Scanning</td><td>Trivy</td></tr> <tr><td>Containerization</td><td>Docker</td></tr> <tr><td>Notifications</td><td>Slack Webhooks</td></tr> </table>
